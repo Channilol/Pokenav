@@ -44,9 +44,11 @@ The app features a unique vertical layout divided into two main sections:
 dependencies:
   flutter:
     sdk: flutter
-  flutter_riverpod: ^2.x.x
-  shared_preferences: ^2.5.3
-  # Additional dependencies to be added as development progresses
+  http: ^1.4.0
+  flutter_riverpod: ^3.0.0-dev.16
+  riverpod_annotation: ^3.0.0-dev.16
+  async_wrapper: ^1.0.0
+  cupertino_icons: ^1.0.8
 ```
 
 ## 🔗 API Documentation
