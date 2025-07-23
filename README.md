@@ -1,10 +1,10 @@
-# PokeIndex
+# Pokenav
 
 A modern and sleek Pokémon navigation app that brings the entire Pokédex universe to your fingertips with cutting-edge design and performance.
 
 ## 🚀 Overview
 
-PokeIndex is a vertical mobile/tablet application designed to provide an immersive browsing experience through all existing Pokémon generations. Built with performance in mind, it leverages stream-based API calls with intelligent auto-caching to deliver real-time data loading updates while efficiently managing the massive amount of Pokémon information.
+Pokenav is a vertical mobile/tablet application designed to provide an immersive browsing experience through all existing Pokémon generations. Built with performance in mind, it leverages stream-based API calls with intelligent auto-caching to deliver real-time data loading updates while efficiently managing the massive amount of Pokémon information.
 
 ## ✨ Features
 
@@ -49,6 +49,7 @@ dependencies:
   riverpod_annotation: ^3.0.0-dev.16
   async_wrapper: ^1.0.0
   cupertino_icons: ^1.0.8
+  # Additional dependencies to be added as development progresses
 ```
 
 ## 🔗 API Documentation
@@ -65,4 +66,4 @@ This project uses the PokéAPI v2. For detailed API documentation, visit: [https
 
 ---
 
-*Stay tuned for updates as we continue to evolve PokeIndex into the ultimate Pokémon companion app!*
+*Stay tuned for updates as we continue to evolve Pokenav into the ultimate Pokémon companion app!*
