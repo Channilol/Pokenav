@@ -71,6 +71,7 @@ class ApiCall {
     // Ottengo l'istanza di SharedPreferences
     final prefs = await SharedPreferences.getInstance();
 
+    // Se gen é nullo leggo tutta la cache
     if (gen == null) {
       String gensJson = '';
       for (var i = 0; i < pokedex.entries.last.key; i++) {
