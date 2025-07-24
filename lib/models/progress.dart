@@ -2,6 +2,7 @@ class PokedexProgress {
   final int current;
   final int total;
   final String message;
+  final String? image;
   final Map<int, Map<String, dynamic>>? data;
   final bool hasError;
   final int successCount;
@@ -11,6 +12,7 @@ class PokedexProgress {
     required this.current,
     required this.total,
     required this.message,
+    this.image,
     this.data,
     this.hasError = false,
     this.successCount = 0,
