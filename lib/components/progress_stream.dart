@@ -2,13 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:pokenav/api_call.dart';
 
 class ProgressStream extends StatelessWidget {
-  final int generation;
   const ProgressStream({super.key, required this.generation});
+  final int generation;
 
   @override
   Widget build(BuildContext context) {
     return StreamBuilder(
-      stream: apiCall.getPokedex(1),
+      stream: apiCall.getGen(generation),
       builder: (context, snapshot) {
         if (!snapshot.hasData) {
           return Center(
@@ -23,7 +23,7 @@ class ProgressStream extends StatelessWidget {
                     child: CircularProgressIndicator(),
                   ),
                 ),
-                Text('Iniziando la fetch dati...'),
+                Text('Trying to fetch data...'),
               ],
             ),
           );
@@ -51,7 +51,18 @@ class ProgressStream extends StatelessWidget {
               ),
               Text('${progress.current}/${progress.total}'),
               Text('${(progress.progress * 100).toStringAsFixed(1)}%'),
+              progress.image != null
+                  ? SizedBox(
+                      height: 100,
+                      width: 100,
+                      child: Image.network(progress.image ?? 'no data'),
+                    )
+                  : SizedBox(height: 100),
               Text(progress.message),
+              // ListView(children: [
+
+              //   ],
+              // ),
             ],
           ),
         );

@@ -2,11 +2,108 @@ import 'dart:convert';
 import 'package:flutter/rendering.dart';
 import 'package:http/http.dart' as http;
 import 'package:pokenav/models/progress.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class ApiCall {
+  // Singleton
   static final ApiCall _apiCall = ApiCall._private();
   ApiCall._private();
+
+  // Url base API
   final _url = 'https://pokeapi.co/api/v2/';
+
+  //* Salva in cache - VERSIONE CORRETTA
+  Future<void> salvaInCache(
+    int generazione,
+    Map<int, Map<String, dynamic>> datiPkmn,
+  ) async {
+    try {
+      // Ottengo istanza di SharedPreferences
+      final prefs = await SharedPreferences.getInstance();
+
+      // IMPORTANTE: Creiamo una nuova Map con chiavi String
+      Map<String, dynamic> datiConChiaviString = {};
+
+      // Convertiamo ogni entry
+      datiPkmn.forEach((id, pokemon) {
+        // Converti la chiave da int a String
+        Map<String, dynamic> filteredPkmn = {};
+        pokemon.forEach((key, value) {
+          if (key != 'moves') {
+            filteredPkmn[key] = value;
+          }
+        });
+        datiConChiaviString[id.toString()] = filteredPkmn;
+      });
+
+      // ORA possiamo fare jsonEncode senza errori
+      String datiJson = jsonEncode(datiConChiaviString);
+
+      // Salvo la gen come chiave univoca
+      String key = 'gen$generazione';
+      await prefs.setString(key, datiJson);
+
+      debugPrint('✅ Dati $key salvati in cache');
+      debugPrint(
+        '💾 Dimensione cache: ${(datiJson.length / 1024).toStringAsFixed(1)} KB',
+      );
+    } catch (e, stackTrace) {
+      debugPrint('❌ Errore nel salvare la cache: $e');
+      debugPrint('📍 Stack trace: $stackTrace');
+    }
+  }
+
+  //* Leggi da cache
+  Future<Map<int, Map<String, dynamic>>?> leggiCache(int gen) async {
+    // Ottengo l'istanza di SharedPreferences
+    final prefs = await SharedPreferences.getInstance();
+
+    // Leggo i dati per capire se c'é la gen salvata
+    String? datiJson = prefs.getString('gen$gen');
+
+    // Se non ci sono dati, ritorna null
+    if (datiJson == null) {
+      debugPrint('Dati gen$gen non trovati in cache');
+      return null;
+    }
+
+    // Se ci sono, facciamo il jsonDecode
+    try {
+      Map<String, dynamic> dati = jsonDecode(datiJson);
+
+      Map<int, Map<String, dynamic>> result = {};
+      dati.forEach((key, value) {
+        result[int.parse(key)] = Map<String, dynamic>.from(value);
+      });
+      debugPrint('Dati gen$gen trovati in cache');
+      return result;
+    } catch (e) {
+      debugPrint('Dati gen$gen non trovati in cache');
+      return null;
+    }
+  }
+
+  // Pulisci cache in base alla gen (se é nulla pulisci tutto)
+  Future<void> pulisciCache([int? gen]) async {
+    final prefs = await SharedPreferences.getInstance();
+    if (gen != null) {
+      String key = 'gen$gen';
+      await prefs.remove(key);
+    } else {
+      for (int i = 0; i < pokedex.entries.length; i++) {
+        await prefs.remove('gen${i + 1}');
+      }
+    }
+  }
+
+  // Check se esiste la cache
+  Future<bool> checkCache(int gen) async {
+    final prefs = await SharedPreferences.getInstance();
+    String key = 'gen$gen';
+    return prefs.containsKey(key);
+  }
+
+  // Mappa generazioni
   Map<int, Map<String, int>> pokedex = {
     1: {'count': 151, 'offset': 0},
     2: {'count': 100, 'offset': 151},
@@ -19,7 +116,8 @@ class ApiCall {
     9: {'count': 120, 'offset': 905},
   };
 
-  Stream<PokedexProgress> getPokedex(int genNum) async* {
+  // Stream generazioni
+  Stream<PokedexProgress> getGen(int genNum) async* {
     final gen = Generation.fromNumber(genNum);
     if (gen == null) throw Exception('Gen must be between 1 and 9');
 
@@ -28,6 +126,49 @@ class ApiCall {
     int errorCount = 0;
 
     try {
+      debugPrint('Controllo la cache per la gen$genNum');
+      Map<int, Map<String, dynamic>>? datiCache = await leggiCache(genNum);
+
+      if (datiCache != null && datiCache.length == gen.count) {
+        debugPrint('Dati gen$genNum NON CORROTTI trovati in cache!!');
+
+        yield PokedexProgress(
+          current: 0,
+          total: gen.count,
+          message: 'Loading pokemon list from cache...',
+        );
+
+        int loaded = 0;
+
+        for (var entry in datiCache.entries) {
+          result[entry.key] = entry.value;
+          loaded++;
+
+          if (loaded % 5 == 0 || loaded == datiCache.length) {
+            yield PokedexProgress(
+              current: loaded,
+              total: gen.count,
+              message: 'Fast loading $loaded/${gen.count}',
+            );
+
+            await Future.delayed(Duration(milliseconds: 50));
+          }
+        }
+
+        yield PokedexProgress(
+          current: gen.count,
+          total: gen.count,
+          message: 'Caricato dalla cache! ⚡',
+          successCount: gen.count,
+        );
+
+        return;
+      } else if (datiCache != null && datiCache.length != gen.count) {
+        debugPrint('Dati gen$genNum CORROTTI trovati in cache!!');
+      }
+
+      debugPrint('Dati in cache non trovati, scarico da internet');
+
       yield PokedexProgress(
         current: 0,
         total: gen.count,
@@ -54,19 +195,19 @@ class ApiCall {
       for (int i = 0; i < pokemonList.length; i++) {
         var pokemon = pokemonList[i];
 
-        yield PokedexProgress(
-          current: i,
-          total: gen.count,
-          message: 'Loading ${pokemon['name']}...',
-          successCount: successCount,
-          errorCount: errorCount,
-        );
-
         try {
           final pokemonRes = await http.get(Uri.parse(pokemon['url']));
           if (pokemonRes.statusCode == 200) {
             final pokemonData = json.decode(pokemonRes.body);
             result[pokemonData['id']] = pokemonData;
+            yield PokedexProgress(
+              current: i,
+              total: gen.count,
+              message: 'Loading ${pokemonData['name']}...',
+              image: pokemonData['sprites']?['front_default'] ?? 'no data',
+              successCount: successCount,
+              errorCount: errorCount,
+            );
             successCount++;
           } else {
             debugPrint(
@@ -78,6 +219,10 @@ class ApiCall {
           debugPrint('Failed to load ${pokemon['name']}');
           errorCount++;
         }
+      }
+
+      if (errorCount == 0 && result.length == gen.count) {
+        await salvaInCache(genNum, result);
       }
 
       String finalMessage = errorCount > 0
