@@ -12,6 +12,19 @@ class ApiCall {
   // Url base API
   final _url = 'https://pokeapi.co/api/v2/';
 
+  // Mappa generazioni
+  Map<int, Map<String, int>> pokedex = {
+    1: {'count': 151, 'offset': 0},
+    2: {'count': 100, 'offset': 151},
+    3: {'count': 135, 'offset': 251},
+    4: {'count': 107, 'offset': 386},
+    5: {'count': 156, 'offset': 493},
+    6: {'count': 72, 'offset': 649},
+    7: {'count': 81, 'offset': 721},
+    8: {'count': 89, 'offset': 802},
+    9: {'count': 120, 'offset': 905},
+  };
+
   //* Salva in cache - VERSIONE CORRETTA
   Future<void> salvaInCache(
     int generazione,
@@ -54,9 +67,21 @@ class ApiCall {
   }
 
   //* Leggi da cache
-  Future<Map<int, Map<String, dynamic>>?> leggiCache(int gen) async {
+  Future<Map<int, Map<String, dynamic>>?> leggiCache({int? gen}) async {
     // Ottengo l'istanza di SharedPreferences
     final prefs = await SharedPreferences.getInstance();
+
+    if (gen == null) {
+      String gensJson = '';
+      for (var i = 0; i < pokedex.entries.last.key; i++) {
+        gensJson += prefs.getString('gen$i') ?? '';
+      }
+
+      if (gensJson == '') {
+        debugPrint('Nessuna generazione trovata salvata nella cache');
+        return null;
+      }
+    }
 
     // Leggo i dati per capire se c'é la gen salvata
     String? datiJson = prefs.getString('gen$gen');
@@ -103,19 +128,6 @@ class ApiCall {
     return prefs.containsKey(key);
   }
 
-  // Mappa generazioni
-  Map<int, Map<String, int>> pokedex = {
-    1: {'count': 151, 'offset': 0},
-    2: {'count': 100, 'offset': 151},
-    3: {'count': 135, 'offset': 251},
-    4: {'count': 107, 'offset': 386},
-    5: {'count': 156, 'offset': 493},
-    6: {'count': 72, 'offset': 649},
-    7: {'count': 81, 'offset': 721},
-    8: {'count': 89, 'offset': 802},
-    9: {'count': 120, 'offset': 905},
-  };
-
   // Stream generazioni
   Stream<PokedexProgress> getGen(int genNum) async* {
     final gen = Generation.fromNumber(genNum);
@@ -127,7 +139,7 @@ class ApiCall {
 
     try {
       debugPrint('Controllo la cache per la gen$genNum');
-      Map<int, Map<String, dynamic>>? datiCache = await leggiCache(genNum);
+      Map<int, Map<String, dynamic>>? datiCache = await leggiCache(gen: genNum);
 
       if (datiCache != null && datiCache.length == gen.count) {
         debugPrint('Dati gen$genNum NON CORROTTI trovati in cache');

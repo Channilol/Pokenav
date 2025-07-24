@@ -22,6 +22,7 @@ class _AnimatedPokenavState extends State<AnimatedPokenav>
     );
   }
 
+  @override
   void dispose() {
     controller.dispose();
     super.dispose();
