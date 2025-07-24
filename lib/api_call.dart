@@ -130,7 +130,8 @@ class ApiCall {
       Map<int, Map<String, dynamic>>? datiCache = await leggiCache(genNum);
 
       if (datiCache != null && datiCache.length == gen.count) {
-        debugPrint('Dati gen$genNum NON CORROTTI trovati in cache!!');
+        debugPrint('Dati gen$genNum NON CORROTTI trovati in cache');
+        debugPrint('Inizio caricamento dati dalla cache');
 
         yield PokedexProgress(
           current: 0,

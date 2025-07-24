@@ -16,6 +16,10 @@ class _LoaderState extends State<Loader> {
       body: SafeArea(
         child: Column(
           children: [
+            const Text(
+              'Pokenav',
+              style: TextStyle(fontSize: 32, fontFamily: 'PixelifySans'),
+            ),
             ElevatedButton(
               onPressed: () => apiCall.pulisciCache(),
               child: const Text('Pulisci cache'),

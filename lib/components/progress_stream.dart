@@ -1,12 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:pokenav/api_call.dart';
+import 'package:pokenav/components/animated_pokenav.dart';
 
 class ProgressStream extends StatelessWidget {
-  const ProgressStream({super.key, required this.generation});
+  const ProgressStream({super.key, required this.generation, this.callback});
   final int generation;
+  final Function? callback;
 
   @override
   Widget build(BuildContext context) {
+    if (callback == 100) {
+      Future.delayed(const Duration(seconds: 2), () => callback!());
+    }
     return StreamBuilder(
       stream: apiCall.getGen(generation),
       builder: (context, snapshot) {
@@ -31,38 +36,38 @@ class ProgressStream extends StatelessWidget {
 
         final progress = snapshot.data!;
 
-        return Center(
+        return Expanded(
           child: Column(
-            spacing: 32,
-            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Text(
-                'Caricando la $generation generazione',
-                style: TextStyle(fontSize: 16),
-              ),
-              SizedBox(
-                width: 500,
-                child: LinearProgressIndicator(
-                  value: progress.progress,
-                  backgroundColor: Colors.blueGrey.shade300,
-                  valueColor: AlwaysStoppedAnimation<Color>(Colors.green),
-                  minHeight: 8,
+              AnimatedPokenav(
+                loadingPercent: double.parse(
+                  (progress.progress * 100).toStringAsFixed(1),
                 ),
               ),
-              Text('${progress.current}/${progress.total}'),
-              Text('${(progress.progress * 100).toStringAsFixed(1)}%'),
-              progress.image != null
-                  ? SizedBox(
-                      height: 100,
-                      width: 100,
-                      child: Image.network(progress.image ?? 'no data'),
-                    )
-                  : SizedBox(height: 100),
-              Text(progress.message),
-              // ListView(children: [
-
-              //   ],
-              // ),
+              Expanded(
+                child: Column(
+                  spacing: 32,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      'Caricando la $generation generazione',
+                      style: TextStyle(fontSize: 16),
+                    ),
+                    SizedBox(
+                      width: 300,
+                      child: LinearProgressIndicator(
+                        value: progress.progress,
+                        backgroundColor: Colors.blueGrey.shade300,
+                        valueColor: AlwaysStoppedAnimation<Color>(Colors.green),
+                        minHeight: 12,
+                      ),
+                    ),
+                    Text('${(progress.progress * 100).toStringAsFixed(1)}%'),
+                    Text(progress.message),
+                  ],
+                ),
+              ),
             ],
           ),
         );
